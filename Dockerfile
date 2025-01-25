@@ -1,17 +1,19 @@
-FROM golang:alpine as builder
+FROM golang:1.22-alpine3.21 as builder
 WORKDIR /go/src
 COPY warp.go ./warp/
 COPY socks5.go ./socks5/
 RUN CGO_ENABLED=0 GOOS=linux \
     apk add --no-cache git build-base && \
     cd warp && \
+    go mod init && \
     go get && \
     go build -a -installsuffix cgo -ldflags '-s' -o warp && \
     cd ../socks5 && \
+    go mod init && \
     go get && \
     go build -a -installsuffix cgo -ldflags '-s' -o socks5
 
-FROM alpine:latest
+FROM alpine:3.21.0
 
 COPY --from=builder /go/src/warp/warp /usr/local/bin/
 COPY --from=builder /go/src/socks5/socks5 /usr/local/bin/
